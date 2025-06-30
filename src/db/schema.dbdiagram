@@ -1,0 +1,47 @@
+Table users {
+  id SERIAL [pk]
+  email varchar(255) [unique, not null]
+  password_hash varchar(255) [not null]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table priorities {
+  id SERIAL [pk]
+  name varchar(50) [unique, not null] // e.g., Low, Medium, High
+}
+
+Table categories {
+  id SERIAL [pk]
+  name varchar(100) [not null]
+  user_id integer [not null] // Foreign key to users.id
+  indexes {
+    (user_id, name) [unique]
+  }
+}
+
+Table tasks {
+  id SERIAL [pk]
+  user_id integer [not null] // Foreign key to users.id
+  category_id integer // Foreign key to categories.id
+  priority_id integer // Foreign key to priorities.id
+  title varchar(255) [not null]
+  description text
+  due_date date
+  completed boolean [default: false]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+// Indexes for performance
+// idx_tasks_user_id ON tasks(user_id)
+// idx_tasks_category_id ON tasks(category_id)
+// idx_tasks_priority_id ON tasks(priority_id)
+// idx_tasks_due_date ON tasks(due_date)
+// idx_tasks_completed ON tasks(completed)
+// idx_categories_user_id ON categories(user_id)
+
+// Relationships
+Ref: categories.user_id > users.id [delete: cascade]
+Ref: tasks.user_id > users.id [delete: cascade]
+Ref: tasks.category_id > categories.id [delete: set null]
+Ref: tasks.priority_id > priorities.id [delete: set null]
