@@ -9,24 +9,49 @@ export class TaskService {
         this.db = db;
     }
 
+    // Helper: get priority_id from priority name
+    async getPriorityIdByName(priority: string): Promise<number | null> {
+        if (!priority) return null;
+        const result = await this.db.query('SELECT id FROM priorities WHERE name = $1', [priority]);
+        return result.rows[0]?.id || null;
+    }
+
+    // Helper: get priority name from id
+    async getPriorityNameById(id: number): Promise<string | null> {
+        if (!id) return null;
+        const result = await this.db.query('SELECT name FROM priorities WHERE id = $1', [id]);
+        return result.rows[0]?.name || null;
+    }
+
     // Create a new task with validation and priority/due date handling
     async createTask(userId: number, taskData: Partial<Task>): Promise<Task> {
         validateTaskInput(taskData);
 
-        const { title, description, due_date, priority_id, category_id } = taskData;
-
-        // Example: Enforce due_date is not in the past
+        const { title, description, due_date, priority } = taskData;
+        let priority_id = taskData.priority_id;
+        // Map priority string to id if needed
+        if (!priority_id && priority) {
+            priority_id = await this.getPriorityIdByName(priority as string);
+        }
+        if (!priority_id) {
+            throw new Error('Invalid or missing priority');
+        }
         if (due_date && new Date(due_date) < new Date()) {
             throw new Error('Due date cannot be in the past');
         }
-
+        // Add status if it is present in taskData
+        const hasStatus = "status" in taskData;
         const result = await this.db.query(
-            `INSERT INTO tasks (user_id, title, description, due_date, priority_id, category_id)
-             VALUES ($1, $2, $3, $4, $5, $6)
+            `INSERT INTO tasks (user_id, title, description, due_date, priority_id${hasStatus ? ', status' : ''})
+             VALUES ($1, $2, $3, $4, $5${hasStatus ? ', $6' : ''})
              RETURNING *`,
-            [userId, title, description, due_date, priority_id, category_id]
+            hasStatus
+                ? [userId, title, description, due_date, priority_id, (taskData as any).status]
+                : [userId, title, description, due_date, priority_id]
         );
-        return result.rows[0];
+        const task = result.rows[0];
+        task.priority = await this.getPriorityNameById(task.priority_id);
+        return task;
     }
 
     // Get a single task by id and user
@@ -35,23 +60,34 @@ export class TaskService {
             `SELECT * FROM tasks WHERE id = $1 AND user_id = $2`,
             [taskId, userId]
         );
-        return result.rows[0] || null;
+        const task = result.rows[0] || null;
+        if (task) {
+            task.priority = await this.getPriorityNameById(task.priority_id);
+        }
+        return task;
     }
 
     // List all tasks for a user, optionally filter by priority or due date
-    async listTasks(userId: number, filters?: { priority_id?: number; due_date?: string }): Promise<Task[]> {
+    async listTasks(userId: number, filters?: { priority?: string; due_date?: string }): Promise<Task[]> {
         let query = `SELECT * FROM tasks WHERE user_id = $1`;
         const params: any[] = [userId];
-        if (filters?.priority_id) {
-            params.push(filters.priority_id);
-            query += ` AND priority_id = $${params.length}`;
+        if (filters?.priority) {
+            const priority_id = await this.getPriorityIdByName(filters.priority);
+            if (priority_id) {
+                params.push(priority_id);
+                query += ` AND priority_id = $${params.length}`;
+            }
         }
         if (filters?.due_date) {
             params.push(filters.due_date);
             query += ` AND due_date = $${params.length}`;
         }
         const result = await this.db.query(query, params);
-        return result.rows;
+        const tasks = result.rows;
+        for (const task of tasks) {
+            task.priority = await this.getPriorityNameById(task.priority_id);
+        }
+        return tasks;
     }
 
     // Get all tasks for a user, ordered by due date
@@ -60,7 +96,11 @@ export class TaskService {
             'SELECT * FROM tasks WHERE user_id = $1 ORDER BY due_date ASC',
             [userId]
         );
-        return result.rows;
+        const tasks = result.rows;
+        for (const task of tasks) {
+            task.priority = await this.getPriorityNameById(task.priority_id);
+        }
+        return tasks;
     }
 
     // Update a task with validation and business logic
@@ -68,9 +108,13 @@ export class TaskService {
         if (updates.due_date && new Date(updates.due_date) < new Date()) {
             throw new Error('Due date cannot be in the past');
         }
-        // ...additional validation as needed...
-
-        // Build dynamic update query
+        if (updates.priority && !updates.priority_id) {
+            updates.priority_id = await this.getPriorityIdByName(updates.priority as string);
+        }
+        if (updates.priority) {
+            delete updates.priority;
+        }
+        // Không xóa status, cho phép update status
         const fields = [];
         const values = [];
         let idx = 1;
@@ -79,14 +123,14 @@ export class TaskService {
             values.push((updates as any)[key]);
             idx++;
         }
-        if (!fields.length) return this.getTaskById(userId, taskId);
-
-        const query = `
-            UPDATE tasks SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1 AND user_id = $2
-            RETURNING *`;
+        if (fields.length === 0) return null;
+        const query = `UPDATE tasks SET ${fields.join(', ')} WHERE id = $1 AND user_id = $2 RETURNING *`;
         const result = await this.db.query(query, [taskId, userId, ...values]);
-        return result.rows[0] || null;
+        const updated = result.rows[0] || null;
+        if (updated) {
+            updated.priority = await this.getPriorityNameById(updated.priority_id);
+        }
+        return updated;
     }
 
     // Delete a task

@@ -66,7 +66,7 @@ router.post('/login', authRateLimiter, async (req: Request, res: Response) => {
     if (!secret) {
       return res.status(500).json({ message: 'JWT secret not configured' });
     }
-    const token = jwt.sign({ userId: user.id, email }, secret, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.id, email }, secret, { expiresIn: '1h' });
     return res.status(200).json({ token, user: { id: user.id, email: user.email, username: user.username } });
   } catch (err) {
     return res.status(500).json({ message: 'Server error', error: err });
