@@ -12,7 +12,11 @@ api.interceptors.request.use(
     if (token) {
       config.headers = config.headers || {};
       config.headers['Authorization'] = `Bearer ${token}`;
+      console.log('[API] Sending token:', token);
+    } else {
+      console.log('[API] No token in localStorage');
     }
+    console.log('[API] Request:', config.method, config.url, config.headers);
     return config;
   },
   (error) => Promise.reject(error)
@@ -20,15 +24,21 @@ api.interceptors.request.use(
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('[API] Response:', response.status, response.config.url, response.data);
+    return response;
+  },
   (error) => {
     if (error.response) {
+      console.error('[API] Error response:', error.response.status, error.response.data);
       // Handle 401 Unauthorized globally
       if (error.response.status === 401) {
         // Optionally, redirect to login or clear user session
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
+    } else {
+      console.error('[API] Network or CORS error:', error);
     }
     return Promise.reject(error);
   }

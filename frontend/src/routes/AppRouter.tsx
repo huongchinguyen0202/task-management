@@ -1,11 +1,11 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Dashboard from '../pages/Dashboard';
 import LoginForm from '../components/common/LoginForm';
 import RegisterForm from '../components/common/RegisterForm';
 import NotFound from '../pages/NotFound';
 import TaskListPage from '../pages/TaskList';
+import { Layout } from '../components/common/Layout';
 
 function ProtectedRoute() {
   const { user } = useAuth();
@@ -14,46 +14,25 @@ function ProtectedRoute() {
 
 function AuthRoute() {
   const { user } = useAuth();
-  return !user ? <Outlet /> : <Navigate to="/" replace />;
+  return !user ? <Outlet /> : <Navigate to="/tasklist" replace />;
 }
-
-const Navigation: React.FC = () => {
-  const { user, logout } = useAuth();
-  return (
-    <nav className="flex items-center justify-between p-4 bg-gray-800 text-white">
-      <Link to="/" className="font-bold text-lg">Task Manager</Link>
-      <div className="flex gap-4 items-center">
-        {user ? (
-          <>
-            <span>{user.username}</span>
-            <button onClick={logout} className="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout</button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="hover:underline">Login</Link>
-            <Link to="/register" className="hover:underline">Register</Link>
-          </>
-        )}
-      </div>
-    </nav>
-  );
-};
 
 const AppRouter: React.FC = () => {
   const { login, register, loading, error } = useAuth();
   return (
     <BrowserRouter>
-      <Navigation />
       <Routes>
-        <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/tasklist" element={<TaskListPage />} />
+        <Route element={<Layout><Outlet /></Layout>}>
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Navigate to="/tasklist" replace />} />
+            <Route path="/tasklist" element={<TaskListPage />} />
+          </Route>
+          <Route element={<AuthRoute />}>
+            <Route path="/login" element={<LoginForm onLogin={login} loading={loading} error={error} />} />
+            <Route path="/register" element={<RegisterForm onRegister={register} loading={loading} error={error} />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
-        <Route element={<AuthRoute />}>
-          <Route path="/login" element={<LoginForm onLogin={login} loading={loading} error={error} />} />
-          <Route path="/register" element={<RegisterForm onRegister={register} loading={loading} error={error} />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

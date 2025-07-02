@@ -1,56 +1,80 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const Navigation: React.FC = () => {
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Custom login button handler
+  const handleLogin = () => {
+    navigate('/login');
+  };
+
+  // Đóng menu khi click ra ngoài
+  React.useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.user-dropdown-btn') && !target.closest('.user-dropdown-menu')) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
   return (
-    <nav className="bg-gray-800 text-white px-4 py-3 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <Link to="/" className="font-bold text-lg">Task Manager</Link>
-        <Link to="/" className="hover:underline hidden sm:inline">Dashboard</Link>
-        {/* Add more navigation links as needed */}
+    <header className="bg-primary text-white shadow-sm sticky-top">
+      <div className="container d-flex align-items-center justify-content-between py-3">
+        <div className="d-flex align-items-center gap-3">
+          <Link to="/tasklist" className="navbar-brand fw-bold fs-4 text-white" style={{ letterSpacing: 1 }}>Task Manager</Link>
+          <nav className="d-none d-md-flex gap-3">
+            <Link to="/tasklist" className={`nav-link text-white${location.pathname === '/tasklist' ? ' fw-bold border-bottom border-2' : ''}`}>Tasks</Link>
+          </nav>
+        </div>
+        <div className="position-relative d-flex justify-content-center align-items-center" style={{ minWidth: 140 }}>
+          {user ? (
+            <>
+              <button
+                className="btn btn-outline-light d-flex align-items-center gap-2 user-dropdown-btn mx-auto"
+                onClick={() => setMenuOpen((open) => !open)}
+                style={{ minWidth: 120, justifyContent: 'center', textTransform: 'uppercase' }}
+              >
+                <span className="d-none d-sm-inline">{user.username?.toUpperCase()}</span>
+                <i className="bi bi-person-circle fs-5"></i>
+              </button>
+              {menuOpen && (
+                <div className="position-absolute end-0 mt-2 bg-white text-dark rounded shadow border z-3 user-dropdown-menu" style={{ minWidth: 160 }}>
+                  <Link to="/profile" className="dropdown-item py-2 px-3">Profile</Link>
+                  <button
+                    className="dropdown-item py-2 px-3 text-danger"
+                    onClick={logout}
+                  >Logout</button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="d-flex gap-2">
+              <button className="btn btn-outline-light" onClick={handleLogin}>Login</button>
+              <Link to="/register" className="btn btn-light text-primary">Register</Link>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="relative">
-        {user ? (
-          <>
-            <button
-              className="flex items-center gap-2 focus:outline-none"
-              onClick={() => setMenuOpen((open) => !open)}
-            >
-              <span className="hidden sm:inline">{user.username}</span>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white text-gray-800 rounded shadow z-10">
-                <Link to="/profile" className="block px-4 py-2 hover:bg-gray-100">Profile</Link>
-                <button
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  onClick={logout}
-                >Logout</button>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="flex gap-2">
-            <Link to="/login" className="hover:underline">Login</Link>
-            <Link to="/register" className="hover:underline">Register</Link>
-          </div>
-        )}
-      </div>
-    </nav>
+    </header>
   );
 };
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="min-h-screen flex flex-col bg-gray-100">
+  <div className="min-vh-100 d-flex flex-column bg-light">
     <Navigation />
-    <main className="flex-1 w-full max-w-6xl mx-auto p-4">
+    <main className="flex-grow-1 container py-4">
       {children}
     </main>
-    <footer className="bg-gray-800 text-white text-center py-2 mt-8">&copy; {new Date().getFullYear()} Task Manager</footer>
+    <footer className="bg-primary text-white text-center py-2 mt-auto shadow-sm">&copy; {new Date().getFullYear()} Task Manager</footer>
   </div>
 );
 

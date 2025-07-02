@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { TaskFormProps } from '../../types/task';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const statusOptions = [
   { value: 'pending', label: 'Pending' },
@@ -16,19 +18,17 @@ const priorityOptions = [
 const TaskForm: React.FC<TaskFormProps> = ({ initialTask, onSubmit, loading }) => {
   const [title, setTitle] = useState(initialTask?.title || '');
   const [description, setDescription] = useState(initialTask?.description || '');
-  const [status, setStatus] = useState<"pending" | "in_progress" | "completed">(
-    initialTask?.status || 'pending'
-  );
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(initialTask?.priority || 'medium');
-  const [dueDate, setDueDate] = useState(initialTask?.dueDate ? initialTask.dueDate.slice(0, 10) : '');
+  const [status, setStatus] = useState<"pending" | "in_progress" | "completed">(initialTask?.status || 'pending');
+  const [dueDate, setDueDate] = useState<Date | null>(initialTask?.dueDate ? new Date(initialTask.dueDate) : initialTask?.due_date ? new Date(initialTask.due_date) : null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setTitle(initialTask?.title || '');
     setDescription(initialTask?.description || '');
-    setStatus(initialTask?.status || 'pending');
     setPriority(initialTask?.priority || 'medium');
-    setDueDate(initialTask?.dueDate ? initialTask.dueDate.slice(0, 10) : '');
+    setStatus(initialTask?.status || 'pending');
+    setDueDate(initialTask?.dueDate ? new Date(initialTask.dueDate) : initialTask?.due_date ? new Date(initialTask.due_date) : null);
     setError(null);
   }, [initialTask]);
 
@@ -51,57 +51,57 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialTask, onSubmit, loading }) =
       return;
     }
     setError(null);
-    onSubmit({
-      ...initialTask,
+    // Chỉ truyền các field backend hỗ trợ
+    const payload: any = {
       title: title.trim(),
       description: description.trim(),
-      status,
+      due_date: dueDate ? dueDate.toISOString() : undefined,
       priority,
-      dueDate: dueDate ? new Date(dueDate).toISOString() : undefined,
-    });
+    };
+    if (initialTask?.id) payload.id = initialTask.id;
+    onSubmit(payload);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto p-4 bg-white rounded shadow">
-      <div>
-        <label className="block mb-1 font-medium">Title<span className="text-red-500">*</span></label>
+    <form onSubmit={handleSubmit} className="p-3">
+      <div className="mb-3">
+        <label className="form-label fw-semibold">Title<span className="text-danger">*</span></label>
         <input
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          className="form-control"
           value={title}
           onChange={e => setTitle(e.target.value)}
           maxLength={100}
           required
         />
       </div>
-      <div>
-        <label className="block mb-1 font-medium">Description</label>
+      <div className="mb-3">
+        <label className="form-label fw-semibold">Description</label>
         <textarea
-          className="w-full border rounded px-3 py-2 focus:outline-none focus:ring"
+          className="form-control"
           value={description}
           onChange={e => setDescription(e.target.value)}
-          rows={3}
           maxLength={500}
         />
       </div>
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <label className="block mb-1 font-medium">Status</label>
+      <div className="mb-3 row">
+        <div className="col-md-6 mb-2 mb-md-0">
+          <label className="form-label fw-semibold">Status</label>
           <select
-            className="w-full border rounded px-3 py-2"
+            className="form-select"
             value={status}
-            onChange={e => setStatus(e.target.value as "pending" | "in_progress" | "completed")}
+            onChange={e => setStatus(e.target.value as any)}
           >
             {statusOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
-        <div className="flex-1">
-          <label className="block mb-1 font-medium">Priority</label>
+        <div className="col-md-6">
+          <label className="form-label fw-semibold">Priority</label>
           <select
-            className="w-full border rounded px-3 py-2"
+            className="form-select"
             value={priority}
-            onChange={e => setPriority(e.target.value as 'low' | 'medium' | 'high')}
+            onChange={e => setPriority(e.target.value as any)}
           >
             {priorityOptions.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -109,23 +109,24 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialTask, onSubmit, loading }) =
           </select>
         </div>
       </div>
-      <div>
-        <label className="block mb-1 font-medium">Due Date<span className="text-red-500">*</span></label>
-        <input
-          type="date"
-          className="w-full border rounded px-3 py-2"
-          value={dueDate}
-          onChange={e => setDueDate(e.target.value)}
+      <div className="mb-3">
+        <label className="form-label fw-semibold">Due Date<span className="text-danger">*</span></label>
+        <DatePicker
+          selected={dueDate}
+          onChange={(date: Date | null) => setDueDate(date)}
+          className="form-control"
+          dateFormat="yyyy-MM-dd"
+          placeholderText="Select due date"
           required
         />
       </div>
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {error && <div className="alert alert-danger py-2 text-center mb-3">{error}</div>}
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+        className="btn btn-primary w-100 fw-bold"
         disabled={loading}
       >
-        {loading ? 'Saving...' : initialTask ? 'Update Task' : 'Create Task'}
+        {initialTask ? 'Update Task' : 'Create Task'}
       </button>
     </form>
   );

@@ -40,74 +40,66 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading, error 
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-200 via-blue-50 to-white font-sans" style={{ fontFamily: 'Segoe UI, Roboto, Arial, sans-serif' }}>
-      <header className="w-full py-6 bg-blue-600 shadow-md mb-8">
-        <h1 className="text-3xl font-extrabold text-white text-center tracking-wide drop-shadow">Task Management System</h1>
-      </header>
-      <div className="flex flex-1 items-center justify-center">
-        <form
-          onSubmit={handleSubmit}
-          className="w-full max-w-lg p-10 bg-white rounded-3xl shadow-2xl border border-blue-200 flex flex-col gap-6 animate-fade-in"
-        >
-          <h2 className="text-2xl font-extrabold text-blue-700 text-center mb-2 tracking-tight drop-shadow">Create your account</h2>
-          <p className="text-center text-blue-400 mb-4">Fast, secure, and free!</p>
-          {showSuccessPopup && (
-            <div className="fixed inset-0 flex items-center justify-center z-50">
-              <div className="bg-white border border-green-400 rounded-xl shadow-2xl p-8 flex flex-col items-center">
-                <span className="text-green-600 text-lg font-bold mb-2">Registration successful!</span>
-                <span className="text-gray-700">Redirecting to login page...</span>
-              </div>
-              <div className="fixed inset-0 bg-black opacity-30 z-40"></div>
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <label className="block font-semibold text-blue-700" htmlFor="username">Username</label>
+    <div className="container d-flex align-items-center justify-content-center min-vh-100 bg-light">
+      <div className="card shadow-lg p-4" style={{ minWidth: 350, maxWidth: 450 }}>
+        <h2 className="text-center mb-2 text-primary">Create your account</h2>
+        <p className="text-center text-secondary mb-4">Fast, secure, and free!</p>
+        {showSuccessPopup && (
+          <div className="alert alert-success text-center mb-3">
+            Registration successful! Redirecting to login page...
+          </div>
+        )}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="form-label fw-semibold text-primary">Username</label>
             <input
-              id="username"
-              className="w-full border border-blue-300 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder-blue-300 text-base transition shadow-sm"
+              type="text"
+              className="form-control"
               value={username}
               onChange={e => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="Username"
               required
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="block font-semibold text-blue-700" htmlFor="email">Email</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold text-primary">Email</label>
             <input
-              id="email"
               type="email"
-              className="w-full border border-blue-300 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder-blue-300 text-base transition shadow-sm"
+              className="form-control"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@email.com"
               required
             />
           </div>
-          <div className="flex flex-col gap-2">
-            <label className="block font-semibold text-blue-700" htmlFor="password">Password</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold text-primary">Password</label>
             <input
-              id="password"
               type="password"
-              className="w-full border border-blue-300 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder-blue-300 text-base transition shadow-sm"
+              className="form-control"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
+              placeholder="Password"
               required
             />
           </div>
           {(formError || error) && (
-            <div className="text-red-600 text-base text-center font-semibold bg-red-50 border border-red-200 rounded-xl p-3 shadow-sm">
+            <div className="alert alert-danger py-2 text-center mb-3">
               {formError || error}
             </div>
           )}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition text-lg tracking-wide mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="btn btn-primary w-100 fw-bold"
             disabled={loading}
           >
             {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
+        <div className="text-center mt-3">
+          <span className="text-secondary">Already have an account? </span>
+          <a href="/login" className="text-decoration-none text-primary">Login</a>
+        </div>
       </div>
     </div>
   );

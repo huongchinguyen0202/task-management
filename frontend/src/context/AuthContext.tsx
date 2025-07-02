@@ -37,6 +37,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const authData = res.data as AuthResponse;
       setUser(authData.user);
       setToken(authData.token);
+      if (authData.token) {
+        localStorage.setItem('token', authData.token); // Đảm bảo luôn lưu token
+      } else {
+        console.warn('[Auth] No token received from backend!');
+      }
+      localStorage.setItem('user', JSON.stringify(authData.user));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
@@ -51,6 +57,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const authData = res.data as AuthResponse;
       setUser(authData.user);
       setToken(authData.token);
+      if (authData.token) {
+        localStorage.setItem('token', authData.token); // Đảm bảo luôn lưu token
+      } else {
+        console.warn('[Auth] No token received from backend!');
+      }
+      localStorage.setItem('user', JSON.stringify(authData.user));
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -62,9 +74,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true); setError(undefined);
     try {
       await apiLogout();
-    } catch { }
+    } catch {}
     setUser(null);
     setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setLoading(false);
   };
 

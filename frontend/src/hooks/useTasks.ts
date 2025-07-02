@@ -12,7 +12,8 @@ export function useTasks() {
     setError(null);
     try {
       const res = await fetchTasks();
-      setTasks(res.data as Task[]);
+      // Lấy đúng mảng task từ response.data.data (theo formatResponse backend)
+      setTasks(res.data?.data || []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch tasks');
     } finally {

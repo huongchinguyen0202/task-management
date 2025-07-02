@@ -12,6 +12,7 @@ const sortOptions = [
   { value: 'createdAt', label: 'Created' },
   { value: 'dueDate', label: 'Due Date' },
   { value: 'title', label: 'Title' },
+  { value: 'status', label: 'Status' }, // Thêm sort theo status
 ];
 
 const TaskList: React.FC<TaskListProps> = ({ tasks, onEdit, onDelete }) => {
@@ -22,7 +23,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onEdit, onDelete }) => {
 
   const filteredTasks = useMemo(() => {
     let filtered = tasks;
-    if (status) filtered = filtered.filter(t => t.status === status);
+    // Lọc status: nếu không có status thì dùng completed
+    if (status) filtered = filtered.filter(t => (t.status ? t.status === status : (status === 'completed' ? t.completed : !t.completed)));
     if (search) filtered = filtered.filter(t => t.title.toLowerCase().includes(search.toLowerCase()));
     filtered = [...filtered].sort((a, b) => {
       let aVal: string | number = '';
@@ -36,6 +38,9 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onEdit, onDelete }) => {
       } else if (sortBy === 'title') {
         aVal = a.title;
         bVal = b.title;
+      } else if (sortBy === 'status') {
+        aVal = a.status || (typeof a.completed === 'boolean' ? (a.completed ? 'completed' : 'pending') : '');
+        bVal = b.status || (typeof b.completed === 'boolean' ? (b.completed ? 'completed' : 'pending') : '');
       }
       if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
@@ -79,39 +84,36 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onEdit, onDelete }) => {
         </button>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border rounded shadow text-sm">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="p-2 text-left">Title</th>
-              <th className="p-2 text-left">Status</th>
-              <th className="p-2 text-left">Due Date</th>
-              <th className="p-2 text-left">Actions</th>
+        <table className="table table-hover align-middle">
+          <thead className="table-light">
+            <tr>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Priority</th>
+              <th>Due Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredTasks.length === 0 ? (
+            {filteredTasks.length === 0 && (
               <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-400">No tasks found.</td>
+                <td colSpan={6} className="text-center text-secondary">No tasks found.</td>
               </tr>
-            ) : (
-              filteredTasks.map(task => (
-                <tr key={task.id} className="border-t hover:bg-gray-50">
-                  <td className="p-2 font-medium">{task.title}</td>
-                  <td className="p-2 capitalize">{task.status || (task.completed ? 'completed' : 'pending')}</td>
-                  <td className="p-2">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '-'}</td>
-                  <td className="p-2 flex gap-2">
-                    <button
-                      className="text-blue-600 hover:underline"
-                      onClick={() => onEdit(task)}
-                    >Edit</button>
-                    <button
-                      className="text-red-600 hover:underline"
-                      onClick={() => onDelete(task.id)}
-                    >Delete</button>
-                  </td>
-                </tr>
-              ))
             )}
+            {filteredTasks.map(task => (
+              <tr key={task.id}>
+                <td>{task.title}</td>
+                <td>{task.description}</td>
+                <td>{task.status ? task.status.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : (typeof task.completed === 'boolean' ? (task.completed ? 'Completed' : 'Pending') : '')}</td>
+                <td>{task.priority}</td>
+                <td>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : task.due_date ? new Date(task.due_date).toLocaleDateString() : ''}</td>
+                <td>
+                  <button className="btn btn-sm btn-outline-primary me-2" onClick={() => onEdit(task)}>Edit</button>
+                  <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(task.id!)}>Delete</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
