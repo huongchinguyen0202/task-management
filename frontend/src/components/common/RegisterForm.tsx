@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface RegisterFormProps {
   onRegister: (data: { username: string; email: string; password: string }) => Promise<void>;
@@ -11,6 +12,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading, error 
   const [email, setEmail] = useState('user@example.com');
   const [password, setPassword] = useState('Password123!');
   const [formError, setFormError] = useState<string | null>(null);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +26,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading, error 
       return;
     }
     setFormError(null);
-    await onRegister({ username: username.trim(), email: email.trim(), password });
+    try {
+      await onRegister({ username: username.trim(), email: email.trim(), password });
+      setShowSuccessPopup(true);
+      setTimeout(() => {
+        setShowSuccessPopup(false);
+        navigate('/login');
+      }, 2000); // Show popup for 2 seconds then redirect
+    } catch (err) {
+      setShowSuccessPopup(false);
+      setFormError('Registration failed. Please check your information or try again.');
+    }
   };
 
   return (
@@ -38,6 +51,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, loading, error 
         >
           <h2 className="text-2xl font-extrabold text-blue-700 text-center mb-2 tracking-tight drop-shadow">Create your account</h2>
           <p className="text-center text-blue-400 mb-4">Fast, secure, and free!</p>
+          {showSuccessPopup && (
+            <div className="fixed inset-0 flex items-center justify-center z-50">
+              <div className="bg-white border border-green-400 rounded-xl shadow-2xl p-8 flex flex-col items-center">
+                <span className="text-green-600 text-lg font-bold mb-2">Registration successful!</span>
+                <span className="text-gray-700">Redirecting to login page...</span>
+              </div>
+              <div className="fixed inset-0 bg-black opacity-30 z-40"></div>
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <label className="block font-semibold text-blue-700" htmlFor="username">Username</label>
             <input
