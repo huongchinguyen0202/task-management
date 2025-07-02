@@ -1,9 +1,30 @@
+-- Drop tables if exist for clean migration
+DROP TABLE IF EXISTS tasks CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;
+DROP TABLE IF EXISTS priorities CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
 -- Migration: Create users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    username VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Migration: Create priorities table
+CREATE TABLE IF NOT EXISTS priorities (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL
+);
+
+-- Migration: Create categories table (nếu chưa có)
+CREATE TABLE IF NOT EXISTS categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE (user_id, name)
 );
 
 -- Migration: Create tasks table
@@ -29,9 +50,13 @@ CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 -- Seed data for users (password: 'Password123!')
-INSERT INTO users (email, password_hash)
-VALUES ('admin@example.com', '$2b$10$wH8Qw1Qw1Qw1Qw1Qw1Qw1uQw1Qw1Qw1Qw1Qw1Qw1Qw1Qw1Qw1K');
+INSERT INTO users (email, password_hash, username)
+VALUES ('admin@example.com', '$2b$10$wH8Qw1Qw1Qw1Qw1Qw1Qw1uQw1Qw1Qw1Qw1Qw1Qw1Qw1Qw1Qw1K', 'admin');
 
--- Seed data for tasks
-INSERT INTO tasks (user_id, title, description, due_date, completed)
-SELECT id, 'Sample Task', 'This is a sample task.', CURRENT_DATE + INTERVAL '7 days', false FROM users WHERE email = 'admin@example.com';
+-- Seed data for priorities
+INSERT INTO priorities (name) VALUES ('low'), ('medium'), ('high') ON CONFLICT (name) DO NOTHING;
+
+-- Seed data for tasks (có priority_id)
+INSERT INTO tasks (user_id, title, description, due_date, completed, priority_id)
+SELECT u.id, 'Sample Task', 'This is a sample task.', CURRENT_DATE + INTERVAL '7 days', false, p.id
+FROM users u, priorities p WHERE u.email = 'admin@example.com' AND p.name = 'medium';
