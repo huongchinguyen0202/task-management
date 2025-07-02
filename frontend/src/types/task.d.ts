@@ -7,6 +7,7 @@ export interface Task {
   createdAt?: string; // ISO string
   updatedAt?: string; // ISO string
   userId?: number;
+  priority?: 'low' | 'medium' | 'high';
   // legacy fields for compatibility
   due_date?: string;
   completed?: boolean;
