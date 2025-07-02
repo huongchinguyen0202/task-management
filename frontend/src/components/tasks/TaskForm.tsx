@@ -57,6 +57,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ initialTask, onSubmit, loading }) =
       description: description.trim(),
       due_date: dueDate ? dueDate.toISOString() : undefined,
       priority,
+      status, // Ensure status is sent to backend
     };
     if (initialTask?.id) payload.id = initialTask.id;
     onSubmit(payload);
