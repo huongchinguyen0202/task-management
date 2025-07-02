@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface LoginFormProps {
   onLogin: (data: { email: string; password: string }) => Promise<void>;
@@ -7,9 +9,22 @@ interface LoginFormProps {
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin, loading, error }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('user@example.com');
+  const [password, setPassword] = useState('Password123!');
   const [formError, setFormError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/tasklist');
+    }
+  }, [user, navigate]);
+
+  const handleInputChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setter(e.target.value);
+    setFormError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +33,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, loading, error }) => {
       return;
     }
     setFormError(null);
-    await onLogin({ email: email.trim(), password });
+    try {
+      await onLogin({ email: email.trim(), password });
+    } catch (err) {
+      setFormError('Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -34,7 +53,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, loading, error }) => {
           type="email"
           className="w-full border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder-blue-300 transition"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={handleInputChange(setEmail)}
           placeholder="you@email.com"
           required
         />
@@ -45,7 +64,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, loading, error }) => {
           type="password"
           className="w-full border border-blue-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-blue-50 text-blue-900 placeholder-blue-300 transition"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={handleInputChange(setPassword)}
           placeholder="Your password"
           required
         />

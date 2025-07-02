@@ -5,6 +5,7 @@ import Dashboard from '../pages/Dashboard';
 import LoginForm from '../components/common/LoginForm';
 import RegisterForm from '../components/common/RegisterForm';
 import NotFound from '../pages/NotFound';
+import TaskListPage from '../pages/TaskList';
 
 function ProtectedRoute() {
   const { user } = useAuth();
@@ -46,6 +47,7 @@ const AppRouter: React.FC = () => {
       <Routes>
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/tasklist" element={<TaskListPage />} />
         </Route>
         <Route element={<AuthRoute />}>
           <Route path="/login" element={<LoginForm onLogin={login} loading={loading} error={error} />} />
