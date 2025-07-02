@@ -13,7 +13,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const getUserFromStorage = () => {
   const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+  try {
+    return user ? JSON.parse(user) : null;
+  } catch {
+    // If invalid JSON, remove and return null
+    localStorage.removeItem('user');
+    return null;
+  }
 };
 const getTokenFromStorage = () => localStorage.getItem('token');
 
