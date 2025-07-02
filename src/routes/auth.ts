@@ -50,7 +50,7 @@ router.post('/login', authRateLimiter, async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Email and password are required' });
   }
   try {
-    const userResult = await query('SELECT id, password_hash FROM users WHERE email = $1', [email]);
+    const userResult = await query('SELECT id, password_hash, email, username FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -64,7 +64,7 @@ router.post('/login', authRateLimiter, async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'JWT secret not configured' });
     }
     const token = jwt.sign({ userId: user.id, email }, secret, { expiresIn: '1h' });
-    return res.status(200).json({ token });
+    return res.status(200).json({ token, user: { id: user.id, email: user.email, username: user.username } });
   } catch (err) {
     return res.status(500).json({ message: 'Server error', error: err });
   }
